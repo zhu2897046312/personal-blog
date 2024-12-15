@@ -1,3 +1,6 @@
+import { SearchRequest } from './common'
+
+
 // 标签实体
 export interface Tag {
   id: number
@@ -20,3 +23,6 @@ export interface UpdateTagRequest {
 export interface CreateTagsRequest {
   names: string[]
 }
+
+// 用户列表请求
+export interface ListTagsRequest extends SearchRequest { }

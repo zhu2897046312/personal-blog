@@ -87,7 +87,7 @@ import { ref, reactive, onMounted } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessageBox } from 'element-plus'
 import { useTagStore } from '@/stores'
-import type { Tag } from '@/types'
+import type { Tag, CreateTagRequest, ListTagsRequest } from '@/types/tag'
 import { storeToRefs } from 'pinia'
 
 const tagStore = useTagStore()
@@ -98,36 +98,39 @@ const batchDialogVisible = ref(false)
 const formRef = ref<FormInstance>()
 const batchFormRef = ref<FormInstance>()
 
-const form = reactive({
-  id: 0,
+// 分页相关
+const currentPage = ref(1)
+const pageSize = ref(10)
+
+const form = reactive<CreateTagRequest & { id?: number }>({
+  id: undefined,
   name: ''
 })
 
-const batchForm = reactive({
+const batchForm = reactive<{ names: string }>({
   names: ''
 })
 
-const rules: FormRules = {
-  name: [
-    { required: true, message: '请输入标签名称', trigger: 'blur' },
-    { min: 1, max: 20, message: '长度在 1 到 20 个字符', trigger: 'blur' }
-  ]
-}
+const rules = reactive<FormRules>({
+  name: [{ required: true, message: '请输入标签名称', trigger: 'blur' }]
+})
 
-const batchRules: FormRules = {
-  names: [
-    { required: true, message: '请输入标签名称', trigger: 'blur' }
-  ]
-}
+const batchRules = reactive<FormRules>({
+  names: [{ required: true, message: '请输入标签名称', trigger: 'blur' }]
+})
 
 // 获取数据
 const fetchData = async () => {
-  await tagStore.fetchTags()
+  const params: ListTagsRequest = {
+    page: currentPage.value,
+    page_size: pageSize.value
+  }
+  await tagStore.fetchTags(params)
 }
 
 // 重置表单
 const resetForm = () => {
-  form.id = 0
+  form.id = undefined
   form.name = ''
 }
 
@@ -175,24 +178,15 @@ const handleDelete = (row: Tag) => {
 // 提交表单
 const handleSubmit = async () => {
   if (!formRef.value) return
-  
   await formRef.value.validate(async (valid) => {
     if (valid) {
-      const data = {
-        name: form.name
-      }
-      
-      let success
       if (form.id) {
-        success = await tagStore.editTag(form.id, data)
+        await tagStore.editTag(form.id, { name: form.name })
       } else {
-        success = await tagStore.addTag(data)
+        await tagStore.addTag({ name: form.name })
       }
-      
-      if (success) {
-        dialogVisible.value = false
-        fetchData()
-      }
+      dialogVisible.value = false
+      resetForm()
     }
   })
 }
@@ -200,16 +194,12 @@ const handleSubmit = async () => {
 // 提交批量添加表单
 const handleBatchSubmit = async () => {
   if (!batchFormRef.value) return
-
   await batchFormRef.value.validate(async (valid) => {
     if (valid) {
-      const names = batchForm.names.split(',').map(name => name.trim()).filter(Boolean)
-      const success = await tagStore.addTags(names)
-      
-      if (success.length > 0) {
-        batchDialogVisible.value = false
-        fetchData()
-      }
+      const names = batchForm.names.split(',').map(name => name.trim()).filter(name => name)
+      await tagStore.addTags({ names })
+      batchDialogVisible.value = false
+      resetBatchForm()
     }
   })
 }

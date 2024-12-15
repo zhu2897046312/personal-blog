@@ -197,13 +197,19 @@ func (h *TagHandler) Get(c *gin.Context) {
 // @Failure 500 {object} response.Response "服务器内部错误"
 // @Router /tags [get]
 func (h *TagHandler) List(c *gin.Context) {
-	tags, err := h.tagService.ListTags(c.Request.Context())
+	var req request.ListTagsRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, response.NewResponse(http.StatusBadRequest, err.Error(), nil))
+		return
+	}
+
+	tags, total, err := h.tagService.ListTags(c.Request.Context(), req.Page, req.PageSize)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.NewResponse(http.StatusInternalServerError, err.Error(), nil))
 		return
 	}
 
-	c.JSON(http.StatusOK, response.NewResponse(http.StatusOK, "获取成功", tags))
+	c.JSON(http.StatusOK, response.NewResponse(http.StatusOK, "获取成功", response.NewPaginationResponse(tags, total, req.Page, req.PageSize)))
 }
 
 // GetPostTags godoc

@@ -113,13 +113,13 @@ func (h *CategoryHandler) List(c *gin.Context) {
 		return
 	}
 
-	categories, err := h.categoryService.ListCategories(c)
+	categories,total, err := h.categoryService.ListCategories(c.Request.Context(), req.Page, req.PageSize)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.NewResponse(http.StatusInternalServerError, err.Error(), nil))
 		return
 	}
 
-	c.JSON(http.StatusOK, response.NewResponse(http.StatusOK, "获取成功", response.NewPaginationResponse(categories, int64(len(categories)), req.Page, req.PageSize)))
+	c.JSON(http.StatusOK, response.NewResponse(http.StatusOK, "获取成功", response.NewPaginationResponse(categories, total, req.Page, req.PageSize)))
 }
 
 // UpdateStatus 更新分类状态

@@ -165,42 +165,39 @@
 import { ref, reactive, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import type { FormInstance, FormRules } from 'element-plus'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { usePostStore, useCategoryStore, useTagStore } from '@/stores'
-import type { Post, CreatePostRequest, ListPostsRequest } from '@/types'
+import { ElMessageBox } from 'element-plus'
+import { usePostStore } from '@/stores'
+import { useCategoryStore } from '@/stores'
+import { useTagStore } from '@/stores'
+import type { Post, CreatePostRequest, UpdatePostRequest, ListPostsRequest } from '@/types/post'
+import type { ListTagsRequest } from '@/types/tag'
 
 const postStore = usePostStore()
 const categoryStore = useCategoryStore()
 const tagStore = useTagStore()
 
-const { posts, total, loading } = storeToRefs(postStore)
+const { posts, loading, total, currentPage, pageSize } = storeToRefs(postStore)
 const { categories } = storeToRefs(categoryStore)
 const { tags } = storeToRefs(tagStore)
 
 const dialogVisible = ref(false)
 const formRef = ref<FormInstance>()
-const currentPage = ref(1)
-const pageSize = ref(10)
 
-interface PostForm extends CreatePostRequest {
-  id?: number
-}
+const searchForm = reactive<ListPostsRequest>({
+  keyword: '',
+  category_id: undefined,
+  status: undefined,
+  page: 1,
+  page_size: 10
+})
 
-const form = reactive<PostForm>({
+const form = reactive<CreatePostRequest & { id?: number }>({
   id: undefined,
   title: '',
   content: '',
   category_id: 0,
   tags: [],
   status: 1
-})
-
-const searchForm = reactive<ListPostsRequest>({
-  page: 1,
-  page_size: 10,
-  keyword: '',
-  category_id: undefined,
-  status: undefined
 })
 
 const rules: FormRules = {
@@ -221,11 +218,16 @@ const rules: FormRules = {
 
 // 获取数据
 const fetchData = async () => {
-  await postStore.fetchPosts({
-    ...searchForm,
+  await postStore.fetchPosts(searchForm)
+}
+
+// 获取数据
+const fetchTagsData = async () => {
+  const params: ListTagsRequest = {
     page: currentPage.value,
     page_size: pageSize.value
-  })
+  }
+  await tagStore.fetchTags(params)
 }
 
 // 重置表单
@@ -243,100 +245,83 @@ const resetSearch = () => {
   searchForm.keyword = ''
   searchForm.category_id = undefined
   searchForm.status = undefined
-  currentPage.value = 1
+  searchForm.page = 1
+  searchForm.page_size = 10
   fetchData()
 }
 
 // 搜索
 const handleSearch = () => {
-  currentPage.value = 1
+  searchForm.page = 1
   fetchData()
 }
 
-// 新增文章
 const handleAdd = () => {
   resetForm()
   dialogVisible.value = true
 }
 
-// 编辑文章
-const handleEdit = async (row: Post) => {
-  const post = await postStore.fetchPost(row.id)
-  if (post) {
-    form.id = post.id
-    form.title = post.title
-    form.content = post.content
-    form.category_id = post.category_id
-    form.status = post.status
-    form.tags = post.tags?.map(tag => tag.name) || []
-    dialogVisible.value = true
+const handleEdit = (row: Post) => {
+  form.id = row.id
+  form.title = row.title
+  form.content = row.content
+  form.category_id = row.category_id
+  form.status = row.status
+  form.tags = row.tags?.map(tag => tag.id.toString()) || []
+  dialogVisible.value = true
+}
+
+const handleDelete = async (row: Post) => {
+  try {
+    await ElMessageBox.confirm('确认删除该文章吗？', '提示', {
+      type: 'warning'
+    })
+    await postStore.removePost(row.id)
+    await fetchData()
+  } catch (error) {
+    // 用户取消删除操作
   }
 }
 
-// 删除文章
-const handleDelete = (row: Post) => {
-  ElMessageBox.confirm(
-    '确认删除该文章吗？',
-    '警告',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  ).then(async () => {
-    const success = await postStore.removePost(row.id)
-    if (success) {
-      await fetchData()
-      ElMessage.success('删除成功')
-    }
-  })
-}
-
-// 提交表单
 const handleSubmit = async () => {
   if (!formRef.value) return
-  
   await formRef.value.validate(async (valid) => {
     if (valid) {
-      const data: CreatePostRequest = {
+      const postData: CreatePostRequest | UpdatePostRequest = {
         title: form.title,
         content: form.content,
         category_id: form.category_id,
         tags: form.tags,
         status: form.status
       }
-      
-      let success
+
       if (form.id) {
-        success = await postStore.editPost(form.id, data)
+        await postStore.editPost(form.id, postData)
       } else {
-        success = await postStore.addPost(data)
+        await postStore.addPost(postData)
       }
-      
-      if (success) {
-        dialogVisible.value = false
-        await fetchData()
-      }
+      dialogVisible.value = false
+      resetForm()
+      await fetchData()
     }
   })
 }
 
-// 处理分页大小变更
-const handleSizeChange = (val: number) => {
-  pageSize.value = val
+const handleSizeChange = (size: number) => {
+  searchForm.page_size = size
+  searchForm.page = 1
   fetchData()
 }
 
-// 处理页码变更
-const handleCurrentChange = (val: number) => {
-  currentPage.value = val
+const handleCurrentChange = (page: number) => {
+  searchForm.page = page
   fetchData()
 }
 
 onMounted(async () => {
   await Promise.all([
-    categoryStore.fetchCategories(),
-    tagStore.fetchTags(),
+    categoryStore.fetchCategories({ page: 1, page_size: 10 }),
+    fetchTagsData(),
     fetchData()
   ])
 })

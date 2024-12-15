@@ -17,7 +17,7 @@ type CategoryService interface {
 	UpdateCategory(ctx context.Context, category *models.Category) error
 	DeleteCategory(ctx context.Context, id uint) error
 	GetCategoryByID(ctx context.Context, id uint) (*models.Category, error)
-	ListCategories(ctx context.Context) ([]models.Category, error)
+	ListCategories(ctx context.Context, page, pageSize int) ([]models.Category, int64, error)
 }
 
 type categoryService struct {
@@ -125,26 +125,6 @@ func (s *categoryService) GetCategoryByID(ctx context.Context, id uint) (*models
 	return category, nil
 }
 
-func (s *categoryService) ListCategories(ctx context.Context) ([]models.Category, error) {
-	// 先从缓存获取
-	categories, err := s.categoryCache.GetList(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if len(categories) > 0 {
-		return categories, nil
-	}
-
-	// 缓存未命中，从数据库获取
-	categories, err = s.categoryRepo.List()
-	if err != nil {
-		return nil, err
-	}
-
-	// 写入缓存
-	if err := s.categoryCache.SetList(ctx, categories); err != nil {
-		return nil, err
-	}
-
-	return categories, nil
+func (s *categoryService) ListCategories(ctx context.Context, page, pageSize int) ([]models.Category, int64, error) {
+	return s.categoryRepo.List(page, pageSize)
 }

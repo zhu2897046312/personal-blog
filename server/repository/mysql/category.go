@@ -11,7 +11,7 @@ type CategoryRepository interface {
 	Update(category *models.Category) error
 	Delete(id uint) error
 	FindByID(id uint) (*models.Category, error)
-	List() ([]models.Category, error)
+	List(page, pageSize int) ([]models.Category, int64, error)
 	FindByName(name string) (*models.Category, error)
 }
 
@@ -29,7 +29,8 @@ func (r *categoryRepository) Create(category *models.Category) error {
 }
 
 func (r *categoryRepository) Update(category *models.Category) error {
-	return r.db.Save(category).Error
+	// Updates 方法默认只更新非零值字段，且不会更新 created_at
+	return r.db.Model(category).Updates(category).Error
 }
 
 func (r *categoryRepository) Delete(id uint) error {
@@ -45,13 +46,22 @@ func (r *categoryRepository) FindByID(id uint) (*models.Category, error) {
 	return &category, nil
 }
 
-func (r *categoryRepository) List() ([]models.Category, error) {
-	var categories []models.Category
-	err := r.db.Find(&categories).Error
+func (r *categoryRepository) List(page, pageSize int) ([]models.Category, int64, error) {
+	var category []models.Category
+	var total int64
+
+	err := r.db.Model(&models.User{}).Count(&total).Error
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return categories, nil
+
+	offset := (page - 1) * pageSize
+	err = r.db.Offset(offset).Limit(pageSize).Find(&category).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return category, total, nil
 }
 
 func (r *categoryRepository) FindByName(name string) (*models.Category, error) {

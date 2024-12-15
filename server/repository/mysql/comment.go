@@ -29,7 +29,8 @@ func (r *commentRepository) Create(comment *models.Comment) error {
 }
 
 func (r *commentRepository) Update(comment *models.Comment) error {
-	return r.db.Save(comment).Error
+	// Updates 方法默认只更新非零值字段，且不会更新 created_at
+	return r.db.Model(comment).Updates(comment).Error
 }
 
 func (r *commentRepository) Delete(id uint) error {

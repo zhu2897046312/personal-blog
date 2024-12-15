@@ -25,6 +25,16 @@
       </el-table-column>
     </el-table>
 
+    <el-pagination
+      v-model:currentPage="currentPage"
+      v-model:pageSize="pageSize"
+      :page-sizes="[10, 20, 50]"
+      layout="total, sizes, prev, pager, next, jumper"
+      :total="total"
+      @size-change="handleSizeChange"
+      @current-change="handleCurrentChange"
+    />
+
     <el-dialog
       v-model="dialogVisible"
       :title="form.id ? '编辑分类' : '新建分类'"
@@ -63,21 +73,17 @@
 import { ref, reactive, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import type { FormInstance, FormRules } from 'element-plus'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessageBox } from 'element-plus'
 import { useCategoryStore } from '@/stores'
-import type { Category, CreateCategoryRequest } from '@/types'
+import type { Category, CreateCategoryRequest } from '@/types/category'
 
 const categoryStore = useCategoryStore()
-const { categories, loading } = storeToRefs(categoryStore)
+const { categories, loading, total, currentPage, pageSize } = storeToRefs(categoryStore)
 
 const dialogVisible = ref(false)
 const formRef = ref<FormInstance>()
 
-interface CategoryForm extends CreateCategoryRequest {
-  id?: number
-}
-
-const form = reactive<CategoryForm>({
+const form = reactive<CreateCategoryRequest & { id?: number }>({
   id: undefined,
   name: '',
   description: ''
@@ -101,65 +107,66 @@ const resetForm = () => {
   form.description = ''
 }
 
-// 新增分类
+// 处理页码变化
+const handleCurrentChange = (page: number) => {
+  categoryStore.fetchCategories({ page, page_size: pageSize.value })
+}
+
+// 处理每页条数变化
+const handleSizeChange = (size: number) => {
+  categoryStore.fetchCategories({ page: 1, page_size: size })
+}
+
 const handleAdd = () => {
   resetForm()
   dialogVisible.value = true
 }
 
-// 编辑分类
 const handleEdit = (row: Category) => {
-  Object.assign(form, row)
+  form.id = row.id
+  form.name = row.name
+  form.description = row.description
   dialogVisible.value = true
 }
 
-// 删除分类
-const handleDelete = (row: Category) => {
-  ElMessageBox.confirm(
-    '确认删除该分类吗？',
-    '警告',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
+const handleDelete = async (row: Category) => {
+  try {
+    await ElMessageBox.confirm('确认删除该分类吗？', '提示', {
       type: 'warning'
-    }
-  ).then(async () => {
-    const success = await categoryStore.removeCategory(row.id)
-    if (success) {
-      await categoryStore.fetchCategories()
-      ElMessage.success('删除成功')
-    }
-  })
+    })
+    await categoryStore.removeCategory(row.id)
+    await categoryStore.fetchCategories({
+      page: currentPage.value,
+      page_size: pageSize.value
+    })
+  } catch (error) {
+    // 用户取消删除操作
+  }
 }
 
-// 提交表单
 const handleSubmit = async () => {
   if (!formRef.value) return
-  
   await formRef.value.validate(async (valid) => {
     if (valid) {
-      const data: CreateCategoryRequest = {
-        name: form.name,
-        description: form.description
-      }
-      
-      let success
       if (form.id) {
-        success = await categoryStore.editCategory(form.id, data)
+        await categoryStore.editCategory(form.id, {
+          name: form.name,
+          description: form.description
+        })
       } else {
-        success = await categoryStore.addCategory(data)
+        await categoryStore.addCategory({
+          name: form.name,
+          description: form.description
+        })
       }
-      
-      if (success) {
-        dialogVisible.value = false
-        await categoryStore.fetchCategories()
-      }
+      dialogVisible.value = false
+      resetForm()
     }
   })
 }
 
 onMounted(() => {
-  categoryStore.fetchCategories()
+  categoryStore.fetchCategories({ page: 1, page_size: 10 })
 })
 </script>
 

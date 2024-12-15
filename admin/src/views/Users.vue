@@ -48,7 +48,6 @@ import { ref, onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
 import type { ListUsersRequest } from '@/types'
-import { ElMessageBox } from 'element-plus'
 
 const userStore = useUserStore()
 const { users, loading, total } = storeToRefs(userStore)

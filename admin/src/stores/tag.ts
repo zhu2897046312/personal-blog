@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { Tag, CreateTagRequest, UpdateTagRequest, CreateTagsRequest } from '@/types/tag'
+import type { Tag, CreateTagRequest, UpdateTagRequest, CreateTagsRequest, ListTagsRequest } from '@/types/tag'
 import { createTag, createTags, deleteTag, getPostTags, getTags, updateTag } from '@/api/tags'
 import { ElMessage } from 'element-plus'
 
@@ -9,16 +9,22 @@ export const useTagStore = defineStore('tag', () => {
   const tags = ref<Tag[]>([])
   const postTags = ref<Tag[]>([])
   const loading = ref(false)
+  const total = ref(0)
+  const currentPage = ref(1)
+  const pageSize = ref(10)
 
   // 获取标签列表
-  const fetchTags = async () => {
+  const fetchTags = async (params : ListTagsRequest) => {
     loading.value = true
     try {
-      const { data: response } = await getTags()
-      tags.value = response.data
-      return response
+      const { data } = await getTags(params)
+      tags.value = data.data.items
+      total.value = data.data.total
+      currentPage.value = params.page
+      pageSize.value = params.page_size
+      return data
     } catch (error) {
-      ElMessage.error('获取标签列表失败')
+      ElMessage.error('获取分类列表失败')
       return null
     } finally {
       loading.value = false
@@ -43,13 +49,17 @@ export const useTagStore = defineStore('tag', () => {
   // 创建标签
   const addTag = async (data: CreateTagRequest) => {
     try {
-      const { data: response } = await createTag(data)
-      const newTag = response.data
-      tags.value.push(newTag)
-      ElMessage.success('创建成功')
-      return newTag
+      const response = await createTag(data)
+      if (response.data.code === 200) {
+        const newTag = response.data.data
+        tags.value.push(newTag)
+        ElMessage.success(response.data.msg)
+        return newTag
+      }
+      ElMessage.error(response.data.msg)
+      return null
     } catch (error) {
-      ElMessage.error('创建失败')
+      ElMessage.error('创建失败：网络错误')
       return null
     }
   }

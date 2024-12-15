@@ -14,3 +14,8 @@ type UpdateTagRequest struct {
 type CreateTagsRequest struct {
 	Names []string `json:"names" binding:"required,dive,min=1,max=50"`
 }
+
+// ListTagsRequest 标签列表请求
+type ListTagsRequest struct {
+	SearchRequest
+}

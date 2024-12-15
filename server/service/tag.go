@@ -17,7 +17,7 @@ type TagService interface {
 	UpdateTag(ctx context.Context, tag *models.Tag) error
 	DeleteTag(ctx context.Context, id uint) error
 	GetTagByID(ctx context.Context, id uint) (*models.Tag, error)
-	ListTags(ctx context.Context) ([]models.Tag, error)
+	ListTags(ctx context.Context, page, pageSize int) ([]models.Tag, int64, error)
 	GetPostTags(ctx context.Context, postID uint) ([]models.Tag, error)
 	CreateTagsIfNotExist(ctx context.Context, names []string) ([]models.Tag, error)
 }
@@ -129,28 +129,8 @@ func (s *tagService) GetTagByID(ctx context.Context, id uint) (*models.Tag, erro
 	return tag, nil
 }
 
-func (s *tagService) ListTags(ctx context.Context) ([]models.Tag, error) {
-	// 先从缓存获取
-	tags, err := s.tagCache.GetList(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if len(tags) > 0 {
-		return tags, nil
-	}
-
-	// 缓存未命中，从数据库获取
-	tags, err = s.tagRepo.List()
-	if err != nil {
-		return nil, err
-	}
-
-	// 写入缓存
-	if err := s.tagCache.SetList(ctx, tags); err != nil {
-		return nil, err
-	}
-
-	return tags, nil
+func (s *tagService) ListTags(ctx context.Context, page, pageSize int) ([]models.Tag, int64, error) {
+	return s.tagRepo.List(page, pageSize)
 }
 
 func (s *tagService) GetPostTags(ctx context.Context, postID uint) ([]models.Tag, error) {

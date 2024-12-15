@@ -32,7 +32,8 @@ func (r *postRepository) Create(post *models.Post) error {
 }
 
 func (r *postRepository) Update(post *models.Post) error {
-	return r.db.Save(post).Error
+	// Updates 方法默认只更新非零值字段，且不会更新 created_at
+	return r.db.Model(post).Updates(post).Error
 }
 
 func (r *postRepository) Delete(id uint) error {

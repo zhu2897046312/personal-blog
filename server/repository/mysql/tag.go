@@ -11,7 +11,7 @@ type TagRepository interface {
 	Update(tag *models.Tag) error
 	Delete(id uint) error
 	FindByID(id uint) (*models.Tag, error)
-	List() ([]models.Tag, error)
+	List(page, pageSize int) ([]models.Tag, int64, error)
 	FindByName(name string) (*models.Tag, error)
 	BatchCreate(tags []models.Tag) error
 	FindOrCreateByNames(names []string) ([]models.Tag, error)
@@ -31,7 +31,8 @@ func (r *tagRepository) Create(tag *models.Tag) error {
 }
 
 func (r *tagRepository) Update(tag *models.Tag) error {
-	return r.db.Save(tag).Error
+	// Updates 方法默认只更新非零值字段，且不会更新 created_at
+	return r.db.Model(tag).Updates(tag).Error
 }
 
 func (r *tagRepository) Delete(id uint) error {
@@ -47,13 +48,22 @@ func (r *tagRepository) FindByID(id uint) (*models.Tag, error) {
 	return &tag, nil
 }
 
-func (r *tagRepository) List() ([]models.Tag, error) {
+func (r *tagRepository) List(page, pageSize int) ([]models.Tag, int64, error) {
 	var tags []models.Tag
-	err := r.db.Find(&tags).Error
+	var total int64
+
+	err := r.db.Model(&models.Tag{}).Count(&total).Error
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return tags, nil
+
+	offset := (page - 1) * pageSize
+	err = r.db.Offset(offset).Limit(pageSize).Find(&tags).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return tags, total, nil
 }
 
 func (r *tagRepository) FindByName(name string) (*models.Tag, error) {

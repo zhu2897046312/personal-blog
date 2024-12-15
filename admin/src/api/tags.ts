@@ -1,5 +1,5 @@
 import request from './request'
-import type { Tag, CreateTagRequest, UpdateTagRequest, CreateTagsRequest } from '@/types/tag'
+import type { Tag, CreateTagRequest, UpdateTagRequest, CreateTagsRequest, ListTagsRequest } from '@/types/tag'
 import type { Response, PaginationResponseData } from '@/types/common'
 
 // 创建标签
@@ -28,8 +28,8 @@ export function getTag(id: number) {
 }
 
 // 获取标签列表
-export function getTags() {
-  return request.get<Response<Tag[]>>('/tags')
+export function getTags(params?: ListTagsRequest) {
+  return request.get<Response<PaginationResponseData<Tag>>>('/tags', { params })
 }
 
 // 获取文章的标签

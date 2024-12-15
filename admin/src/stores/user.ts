@@ -28,7 +28,7 @@ export const useUserStore = defineStore('user', () => {
   }
 
   // 获取所有用户列表
-  const fetchUsers = async (params: ListUsersRequest) => {
+  const fetchUsers = async (params : ListUsersRequest) => {
     loading.value = true
     try {
       const { data } = await getUsers(params)

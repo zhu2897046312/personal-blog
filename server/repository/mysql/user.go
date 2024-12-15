@@ -30,7 +30,8 @@ func (r *userRepository) Create(user *models.User) error {
 }
 
 func (r *userRepository) Update(user *models.User) error {
-	return r.db.Save(user).Error
+	// Updates 方法默认只更新非零值字段，且不会更新 created_at
+	return r.db.Model(user).Updates(user).Error
 }
 
 func (r *userRepository) Delete(id uint) error {
