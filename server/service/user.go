@@ -63,7 +63,6 @@ func (s *userService) Register(ctx context.Context, user *models.User) error {
 	user.Password = string(hashedPassword)
 
 	// 设置默认值
-	user.Role = "user"
 	user.Status = 1
 	user.CreatedAt = time.Now()
 	user.UpdatedAt = time.Now()

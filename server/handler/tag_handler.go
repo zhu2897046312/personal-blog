@@ -31,7 +31,7 @@ func NewTagHandler(tagService service.TagService) *TagHandler {
 // @Produce json
 // @Security ApiKeyAuth
 // @Param data body request.CreateTagRequest true "标签信息"
-// @Success 200 {object} response.Response{data=docs.Tag} "创建成功"
+// @Success 200 {object} response.Response{data=models.Tag} "创建成功"
 // @Failure 400 {object} response.Response "请求参数错误"
 // @Failure 401 {object} response.Response "未登录"
 // @Failure 403 {object} response.Response "权限不足"
@@ -64,7 +64,7 @@ func (h *TagHandler) Create(c *gin.Context) {
 // @Produce json
 // @Security ApiKeyAuth
 // @Param data body request.CreateTagsRequest true "标签列表"
-// @Success 200 {object} response.Response{data=[]docs.Tag} "创建成功"
+// @Success 200 {object} response.Response{data=[]models.Tag} "创建成功"
 // @Failure 400 {object} response.Response "请求参数错误"
 // @Failure 401 {object} response.Response "未登录"
 // @Failure 403 {object} response.Response "权限不足"
@@ -95,7 +95,7 @@ func (h *TagHandler) CreateBatch(c *gin.Context) {
 // @Security ApiKeyAuth
 // @Param id path int true "标签ID"
 // @Param data body request.UpdateTagRequest true "标签信息"
-// @Success 200 {object} response.Response{data=docs.Tag} "更新成功"
+// @Success 200 {object} response.Response{data=models.Tag} "更新成功"
 // @Failure 400 {object} response.Response "请求参数错误"
 // @Failure 401 {object} response.Response "未登录"
 // @Failure 403 {object} response.Response "权限不足"
@@ -167,7 +167,7 @@ func (h *TagHandler) Delete(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path int true "标签ID"
-// @Success 200 {object} response.Response{data=docs.Tag} "获取成功"
+// @Success 200 {object} response.Response{data=models.Tag} "获取成功"
 // @Failure 404 {object} response.Response "标签不存在"
 // @Failure 500 {object} response.Response "服务器内部错误"
 // @Router /tags/{id} [get]
@@ -193,7 +193,7 @@ func (h *TagHandler) Get(c *gin.Context) {
 // @Tags tag
 // @Accept json
 // @Produce json
-// @Success 200 {object} response.Response{data=[]docs.Tag} "获取成功"
+// @Success 200 {object} response.Response{data=[]models.Tag} "获取成功"
 // @Failure 500 {object} response.Response "服务器内部错误"
 // @Router /tags [get]
 func (h *TagHandler) List(c *gin.Context) {
@@ -213,7 +213,7 @@ func (h *TagHandler) List(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param post_id path int true "文章ID"
-// @Success 200 {object} response.Response{data=[]docs.Tag} "获取成功"
+// @Success 200 {object} response.Response{data=[]models.Tag} "获取成功"
 // @Failure 404 {object} response.Response "文章不存在"
 // @Failure 500 {object} response.Response "服务器内部错误"
 // @Router /posts/{post_id}/tags [get]

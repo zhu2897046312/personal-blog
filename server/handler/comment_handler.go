@@ -34,7 +34,7 @@ func (h *CommentHandler) Create(c *gin.Context) {
 		PostID:   req.PostID,
 		UserID:   userID.(uint),
 		Content:  req.Content,
-		ParentID: req.ParentID,
+		ParentID: &req.ParentID,
 	}
 
 	if err := h.commentService.CreateComment(c, comment); err != nil {

@@ -6,6 +6,7 @@ type RegisterRequest struct {
 	Password string `json:"password" binding:"required,min=6,max=32"`
 	Email    string `json:"email" binding:"required,email"`
 	Nickname string `json:"nickname" binding:"required,min=2,max=32"`
+	Role     string `json:"role" binding:"required,oneof=admin user"`
 }
 
 // LoginRequest 用户登录请求
@@ -14,11 +15,11 @@ type LoginRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
-// UpdateUserRequest 更新用户信息请求
+// UpdateProfileRequest 更新用户信息请求
 type UpdateProfileRequest struct {
 	Nickname string `json:"nickname" binding:"required,min=2,max=32"`
 	Email    string `json:"email" binding:"required,email"`
-	Avatar   string `json:"avatar"`
+	Avatar   string `json:"avatar" binding:"omitempty,max=200"`
 }
 
 // ChangePasswordRequest 修改密码请求
@@ -29,6 +30,10 @@ type ChangePasswordRequest struct {
 
 // ListUsersRequest 用户列表请求
 type ListUsersRequest struct {
-	Page     int `form:"page" binding:"required,min=1"`
-	PageSize int `form:"page_size" binding:"required,min=1,max=100"`
+	SearchRequest
+}
+
+// UpdateUserStatusRequest 更新用户状态请求
+type UpdateUserStatusRequest struct {
+	StatusRequest
 }

@@ -20,11 +20,13 @@ type UpdatePostRequest struct {
 
 // ListPostsRequest 文章列表请求
 type ListPostsRequest struct {
-	Page       int    `form:"page" binding:"required,min=1"`
-	PageSize   int    `form:"page_size" binding:"required,min=1,max=100"`
-	CategoryID uint   `form:"category_id"`
-	TagID      uint   `form:"tag_id"`
-	UserID     uint   `form:"user_id"`
-	Keyword    string `form:"keyword"`
+	CategoryID uint   `form:"category_id" binding:"omitempty,min=1"`
+	Tag        string `form:"tag" binding:"omitempty,min=1"`
 	Status     int    `form:"status" binding:"omitempty,oneof=1 2"` // 1:公开 2:草稿
+	SearchRequest
+}
+
+// UpdatePostStatusRequest 更新文章状态请求
+type UpdatePostStatusRequest struct {
+	Status int `json:"status" binding:"required,oneof=1 2"` // 1:公开 2:草稿
 }
